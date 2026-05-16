@@ -1,36 +1,65 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
 items = {}
 
 @app.post("/items/")
-def create_item(item: dict):
-    items[len(items)] = item
-    return {"item": item}
+def create_item():
+    item = request.get_json()
 
-@app.delete("/items/{item_id}")
-def delete_item(item_id: int):
+    item_id = len(items)
+    items[item_id] = item
+
+    return jsonify({
+        "item_id": item_id,
+        "item": item,
+        "status": "created"
+    }), 201
+
+
+@app.delete("/items/<int:item_id>")
+def delete_item(item_id):
     if item_id in items:
         del items[item_id]
-        return {"item_id": item_id, "status": "deleted"}
-    return {"error": "Item not found"}
+        return jsonify({
+            "item_id": item_id,
+            "status": "deleted"
+        })
 
-@app.put("/items/{item_id}")
-def update_item(item_id: int, item: dict):
+    return jsonify({"error": "Item not found"}), 404
+
+
+@app.put("/items/<int:item_id>")
+def update_item(item_id):
+    item = request.get_json()
+
     if item_id in items:
         items[item_id] = item
-        return {"item_id": item_id, "item": item, "status": "updated"}
-    return {"error": "Item not found"}
+        return jsonify({
+            "item_id": item_id,
+            "item": item,
+            "status": "updated"
+        })
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int):
+    return jsonify({"error": "Item not found"}), 404
+
+
+@app.get("/items/<int:item_id>")
+def read_item(item_id):
     if item_id in items:
-        return {"item_id": item_id, "name": f"Item {item_id}"}
-    return {"error": "Item not found"}
+        return jsonify({
+            "item_id": item_id,
+            "item": items[item_id]
+        })
+
+    return jsonify({"error": "Item not found"}), 404
+
+
 @app.route("/")
 def hello_world():
-    return "<p>Hello, World!</>"
+    return "<p>Hello, World!</p>"
+
 
 if __name__ == "__main__":
     app.run(debug=True)
